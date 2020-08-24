@@ -40,6 +40,7 @@ In this function, the target label indicates whether the two embeddings should b
 
 
 ### The model
+
 ![Siamese Network](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/siamese.png)
 
 
@@ -148,6 +149,7 @@ class SiameseMNIST(Dataset):
 
 ### Metric 
 We also want to see how well the model does during training. We can do this by measuring the accuracy of a K Nearest Neighbor (K-NN) classifier in the embedding space. We will do that as follows. First, we will gather all the embeddings during the training loop. Then, at the end of the training loop, we measure the accuracy of the K-NN classifier in the embedding space. If this accuracy is high, we know that the embeddings are separable and closely clustered. We can do this using the following code:
+
 ```
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -160,6 +162,7 @@ def knn_accuracy(embeddings, labels):
 
 ### Visualization
 In this toy example, we are creating a 2D embedding space. So we can directly visualize the embedding space. We have already gathered all the embedings in the previous step. So lets also plot these to visualise the embedings space using a scatter plot to see how it changes during the training process:
+
 ```
 f create_embeddings_plot_image(embeddings, labels):
     colours = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
@@ -189,13 +192,16 @@ f create_embeddings_plot_image(embeddings, labels):
 
 ### Results
 The results look very good. The K-NN accuracy quickly approaches 100% for the training and validation set.
+
 ![K-NN accuracy](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/knn_accuracy.png)
 
 
 The embedding space also looks very good. We get distinct clusters for each of the ten digits. We might want to train a bit longer than 20 epochs to make the more separable.
+
 ![Training set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/training_set.gif)
 
 The embedding also works for the validation set, so we are not overfitting.
+
 ![Validation set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/validation.gif)
 
 ### Conclusion
