@@ -1,11 +1,15 @@
 
+
 # Hello World of Deep Metric Learning: Siamese Contrastive loss
 
 Deep metric learning is a fascinating deep learning technique. This technique aims a learn an embedding mapping that places similar items as close as possible, while it maps dissimilar item as far away from each other as possible in the embedding space. Using this technique, we can solve tough challenges such as the Google Landmark and Humpback Whale Identification Kaggle challenge. However, getting started with this method can immensely challenging due to the lack of materials and the vast amount of new concepts. In this blog post, I will show you the Hello World version of Deep metric learning, allowing you to start your incredible journey into the world of metric learning.
 
+![Training set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/training_set.gif)
+
+
 ### The goal
 As is the tradition in ML, we will use the MNIST dataset for this hello world example. Normally our goal would be to create a classifier that given a 28x28 handwritten digit, can predict whether it is a 0, 1, ... or 9. However, in metric learning, we want to create a function that maps the images an embedding spaces that clusters all the images with the same class label together, while keeping the clusters as separable as possible. 
-At the end of this article, you should be able to map all the MNIST digits into a 2D space which should look like figure X. During this article, I will be using PyTorch Lightning, but the code will also work in native PyTorch. Feel free to follow along or just to run the example notebook in Colab. 
+At the end of this article, you should be able to map all the MNIST digits into a 2D space which should look like figure above. During this article, I will be using PyTorch Lightning, but the code will also work in native PyTorch. Feel free to follow along or just to run the example notebook in Colab. 
 
 
 
@@ -36,6 +40,10 @@ In this function, the target label indicates whether the two embeddings should b
 
 
 ### The model
+![Siamese Network](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/siamese.png)
+
+
+
 As the title suggested, we will be using a Siamese Network. This part is rather straight forward. First, we create a simple MNIST encoding backbone. This encoder should map the 28x28 image to a 2D feature.  I created the model following:
 ```
 class ConvBackbone(nn.Module):  
@@ -181,7 +189,15 @@ f create_embeddings_plot_image(embeddings, labels):
 
 
 ### Results
+The results look very good. The K-NN accuracy quickly approaches 100% for the training and validation set.
+![K-NN accuracy](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/knn_accuracy.png)
 
+
+The embedding space also looks very good. We get distinct clusters for each of the ten digits. We might want to train a bit longer than 20 epochs to make the more separable.
 ![Training set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/training_set.gif)
 
+The embedding also works for the validation set, so we are not overfitting.
 ![Validation set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/validation.gif)
+
+### Conclusion
+In this article, you got your first practical introduction into Deep Metric Larning. You have learned how to use contrastive loss in a Siamese network setting to obtain adequate results. However, there is still room for improvement. For example, our tuple sample strategy might be a bit naive. In future articles, I will introduce you to a concept called mining which significantly improve the efficiency of this algorithm. 
