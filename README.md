@@ -43,7 +43,6 @@ In this function, the target label indicates whether the two embeddings should b
 ![Siamese Network](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/siamese.png)
 
 
-
 As the title suggested, we will be using a Siamese Network. This part is rather straight forward. First, we create a simple MNIST encoding backbone. This encoder should map the 28x28 image to a 2D feature.  I created the model following:
 ```
 class ConvBackbone(nn.Module):  
