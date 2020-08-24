@@ -1,9 +1,11 @@
+
 # Hello World of Deep Metric Learning: Siamese Contrastive loss
 
-Deep metric learning is a fascinating deep learning technique. This technique aims a learn an embedding mapping that places similar items as close as possible, while it maps dissimilar item as far away from each other as possible in the embedding space, allowing us to solve tough challenges such as the Google Landmark and Humpback Whale Identification. However, getting started with technique can immensely challenging due to the lack of materials and the vast amount of new concepts. In this blog post, I will show you the Hello World version of Deep metric learning, allowing you to start your incredible journey into the world of metric learning.
+Deep metric learning is a fascinating deep learning technique. This technique aims a learn an embedding mapping that places similar items as close as possible, while it maps dissimilar item as far away from each other as possible in the embedding space. Using this technique, we can solve tough challenges such as the Google Landmark and Humpback Whale Identification Kaggle challenge. However, getting started with this method can immensely challenging due to the lack of materials and the vast amount of new concepts. In this blog post, I will show you the Hello World version of Deep metric learning, allowing you to start your incredible journey into the world of metric learning.
 
 ### The goal
-As is the tradition in ML, we will use the MNIST dataset for this hello world example. Normally our goal would be to create a classifier that given a 28x28 handwritten digit, can predict whether it is a 0, 1, ... or 9. However, in metric learning, we want to create a function that maps the images an embedding spaces that clusters all the images with the same class label together, while keeping the clusters separable as possible.
+As is the tradition in ML, we will use the MNIST dataset for this hello world example. Normally our goal would be to create a classifier that given a 28x28 handwritten digit, can predict whether it is a 0, 1, ... or 9. However, in metric learning, we want to create a function that maps the images an embedding spaces that clusters all the images with the same class label together, while keeping the clusters as separable as possible. 
+At the end of this article, you should be able to map all the MNIST digits into a 2D space which should look like figure X. During this article, I will be using PyTorch Lightning, but the code will also work in native PyTorch. Feel free to follow along or just to run the example notebook in Colab. 
 
 
 
@@ -11,9 +13,10 @@ As is the tradition in ML, we will use the MNIST dataset for this hello world ex
 Let's get started with the loss function. We will be using the Contrastive Loss function:
 $$ L = [d_{pos}]_+ + [m - d_{neg}]_+ = max(0, d_{pos}) + max(0, m - d_{neg}) $$
 
-In this function, $d_{pos}$ is the distance between similar instances, $d_{neg}$ is the distance between dissimilar cases and $m$ is the margin. The first part of the formula measure how far apart all the similar examples are. The second part measures how far apart all the dissimilar pairs are.
+In this function, $d_{pos}$ is the distance between similar instance tuples, $d_{neg}$ is the distance between dissimilar instance tuples, and $m$ is the margin. The first part of the formula measures how far apart all the similar instances are, minimizing this part ensures that similar instances will be clustered to gather.
+The second part measures how far apart all the dissimilar pairs are, minimizing this part ensures that the different cluster will be as separable as possible.
 
-Now the first thing we have to is translate this bit of math in usable pytorch code. We can to that as follows:
+Now the first thing we have to do is translate this bit of math in usable PyTorch code. In this case we will be using the euclidean distance metric, which gives us the following loss function:
 ```
 class ContrastiveLoss(nn.Module):  
     def __init__(self, margin, *, eps:float=1e-9):  
@@ -33,7 +36,7 @@ In this function, the target label indicates whether the two embeddings should b
 
 
 ### The model
-As the title suggested, we will be using a Siamese Network. This part is rather straight forward. First, we create a simple MNIST encoding backbone. This encoder should map the 28x28 image to a 2D feature.  I created the model following model:
+As the title suggested, we will be using a Siamese Network. This part is rather straight forward. First, we create a simple MNIST encoding backbone. This encoder should map the 28x28 image to a 2D feature.  I created the model following:
 ```
 class ConvBackbone(nn.Module):  
     def __init__(self):  
@@ -50,13 +53,13 @@ class ConvBackbone(nn.Module):
                                 nn.Linear(256, 2)  
                                 )  
   
-    def forward(self, x):  
-        output = self.convnet(x)  
-        output = output.view(output.size()[0], -1)  
-        output = self.fc(output)  
-        return output
+      def forward(self, x):  
+          output = self.convnet(x)  
+          output = output.view(output.size()[0], -1)  
+          output = self.fc(output)  
+          return output
 ```
-We then create the training loop as follows. 
+We then create the training step as follows. 
 ```
 def training_step(self, batch, batch_idx):
   # Fetch the data  
@@ -70,14 +73,14 @@ def training_step(self, batch, batch_idx):
     log = {"train_loss": loss}  
     return {"loss": loss, "log": log, "embeddings": embedding1, "labels": labels}
 ```
-I create the training loop in PyTorch Lightning, but this also works in a standard PyTorch training loop.
+
 
 ### Loading the data
 In the training loop, we need the following batch structure:
-- `X = (input1, input2)` is a batches of MNIST image tuples.
+- `X = (input1, input2)` is batches of MNIST image tuples.
 - `Y = (targets, labels)` is a batch of targets (is it a tuple of similar or dissimilar images) and labels are the digit label, which we will use for visualization purposes.
 
-We can create a Siamese version of the MNIST dataset using the following wrapper:
+We will be using the following dataset wrapper to transform MNIST into the required format:
 ```
 class SiameseMNIST(Dataset):  
     def __init__(self, mnist_dataset):  
@@ -136,9 +139,49 @@ class SiameseMNIST(Dataset):
         return len(self.mnist_dataset)
 ```
 
-### Metric and visualization
-To see how well the does during training we also need some metric and visualizations. So during training we gather all the embedings. Then at the of the epoch we create a scatter plot tensor board to so how the model progress during training. We can also calculate the estimate the predictive power of the embedding using a K-NN clasifier.
+### Metric 
+We also want to see how well the model does during training. We can do this by measuring the accuracy of a K Nearest Neighbor (K-NN) classifier in the embedding space. We will do that as follows. First, we will gather all the embeddings during the training loop. Then, at the end of the training loop, we measure the accuracy of the K-NN classifier in the embedding space. If this accuracy is high, we know that the embeddings are separable and closely clustered. We can do this using the following code:
+```
+from sklearn.neighbors import KNeighborsClassifier
+
+def knn_accuracy(embeddings, labels):
+    embeddings = embeddings.detach().cpu()
+    labels = labels.detach().cpu()
+
+    return KNeighborsClassifier().fit(embeddings, labels).score(embeddings, labels)
+```
+
+### Visualization
+In this toy example, we are creating a 2D embedding space. So we can directly visualize the embedding space. We have already gathered all the embedings in the previous step. So lets also plot these to visualise the embedings space using a scatter plot to see how it changes during the training process:
+```
+f create_embeddings_plot_image(embeddings, labels):
+    colours = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
+
+    embeddings = embeddings.detach().cpu()
+    labels = labels.detach().cpu()
+    for label in torch.unique(labels):
+        color = colours[int(label) % len(colours)]
+        idx_slice = labels == label
+        plt.scatter(embeddings[idx_slice, 0], embeddings[idx_slice, 1], label=str(int(label)), c=color)
+
+    plt.legend(loc='upper right')
+    plt.grid()
+    
+    # Transform the plot to numpy array such that we can plot it Tensorboard
+    buf = io.BytesIO()
+    plt.savefig(buf, format='jpg')
+    buf.seek(0)
+    image = cv2.imdecode(np.frombuffer(buf.getvalue(), np.uint8), -1)
+    image = image.transpose(2, 0, 1)
+    
+    plt.close()
+
+    return image
+```
 
 
 ### Results
 
+![Training set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/training_set.gif)
+
+![Validation set](https://raw.githubusercontent.com/j0rd1smit/Hello_world_of_metric_learning/master/images/validation.gif)
